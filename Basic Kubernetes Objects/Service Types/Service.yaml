@@ -1,0 +1,50 @@
+# NodePort Service
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-world-nodeport
+  labels:
+    app: hello-world-nodeport
+spec:
+  type: NodePort
+  selector:
+    app: hello-world-nodeport
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+    nodePort: 30000
+
+
+---
+#Load Balancer Service
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-world-loadbalancer
+spec:
+  type: LoadBalancer
+  selector:
+    app: hello-world-loadbalancer
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+
+---
+#Cluster IP service
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-world-clusterip
+spec:
+  type: ClusterIP
+  selector:
+    app: hello-world-clusterip
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080

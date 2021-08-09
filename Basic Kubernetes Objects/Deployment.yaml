@@ -1,0 +1,319 @@
+#Simple Deployments
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world
+  labels:
+    app: hello-world
+  namespace: playground1
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: hello-world
+  template:
+    metadata:
+      labels:
+        app: hello-world
+    spec:
+      containers:
+      - name: hello-world
+        image: gcr.io/google-samples/hello-app:1.0
+        ports:
+        - containerPort: 8080
+
+---
+#Deployment with Container Probes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-world
+  template:
+    metadata:
+      labels:
+        app: hello-world
+    spec:
+      containers:
+      - name: hello-world
+        image: gcr.io/google-samples/hello-app:1.0
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          tcpSocket:
+            port: 8081
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8081
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+---
+#Deployment with Env Secrets
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world-secrets-env
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-world-secrets-env
+  template:
+    metadata:
+      labels:
+        app: hello-world-secrets-env
+    spec:
+      containers:
+      - name: hello-world
+        image: gcr.io/google-samples/hello-app:1.0
+        env:
+        - name: app1username
+          valueFrom:
+            secretKeyRef:
+              name: app1
+              key: USERNAME 
+        - name: app1password
+          valueFrom:
+            secretKeyRef:
+              name: app1
+              key: PASSWORD 
+        ports:
+        - containerPort: 8080
+
+---
+#Deployment with Secret file reference
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world-secrets-files
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-world-secrets-files
+  template:
+    metadata:
+      labels:
+        app: hello-world-secrets-files
+    spec:
+      volumes:
+        - name: appconfig
+          secret:
+            secretName: app1
+      containers:
+      - name: hello-world
+        image: gcr.io/google-samples/hello-app:1.0
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+          - name: appconfig
+            mountPath: "/etc/appconfig"
+
+---
+#Deployment with Private Registry Details Mounted
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world-private-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-world-private-registry
+  template:
+    metadata:
+      labels:
+        app: hello-world-private-registry
+    spec:
+      containers:
+      - name: hello-world
+        image: nocentino/hello-app:ps
+        ports:
+          - containerPort: 8080
+      imagePullSecrets:
+      - name: private-reg-cred
+
+---
+#Deployment ConfigMap Mount
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world-configmaps-files-qa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-world-configmaps-files-qa
+  template:
+    metadata:
+      labels:
+        app: hello-world-configmaps-files-qa
+    spec:
+      volumes:
+        - name: appconfig
+          configMap:
+            name: appconfigqa
+      containers:
+      - name: hello-world
+        image: gcr.io/google-samples/hello-app:1.0
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+          - name: appconfig
+            mountPath: "/etc/appconfig"
+
+---
+#Deployments Mapped onto Nodes using Selectors
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world-gpu
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-world-gpu
+  template:
+    metadata:
+      labels:
+        app: hello-world-gpu
+    spec:
+      containers:
+      - name: hello-world
+        image: gcr.io/google-samples/hello-app:1.0
+        ports:
+        - containerPort: 8080
+      nodeSelector:
+        hardware: local_gpu
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world-ssd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-world-ssd
+  template:
+    metadata:
+      labels:
+        app: hello-world-ssd
+    spec:
+      containers:
+      - name: hello-world
+        image: gcr.io/google-samples/hello-app:1.0
+        ports:
+        - containerPort: 8080
+      nodeSelector:
+        disk: local_ssd
+
+---
+#Deployemtn Example with tolerations
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world-tolerations
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hello-world-tolerations
+  template:
+    metadata:
+      labels:
+        app: hello-world-tolerations
+    spec:
+      containers:
+      - name: hello-world
+        image: gcr.io/google-samples/hello-app:1.0
+        ports:
+        - containerPort: 8080
+      tolerations:
+      - key: "key"
+        operator: "Equal"
+        value: "MyTaint"
+        effect: "NoSchedule"
+
+---
+#Deployemt with Pod Anti-Affinity
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-world-web
+  template:
+    metadata:
+      labels:
+        app: hello-world-web
+    spec:
+      containers:
+      - name: hello-world-web
+        image: gcr.io/google-samples/hello-app:1.0
+        ports:
+        - containerPort: 8080
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - hello-world-web
+            topologyKey: "kubernetes.io/hostname"
+---
+#Deployment with Pod Affinity
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-world-cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-world-cache
+  template:
+    metadata:
+      labels:
+        app: hello-world-cache
+    spec:
+      containers:
+      - name: hello-world-cache
+        image: gcr.io/google-samples/hello-app:1.0
+        ports:
+        - containerPort: 8080
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - hello-world-web
+            topologyKey: "kubernetes.io/hostname"
+
+---
+

@@ -1,0 +1,103 @@
+#Pods with NodeSelector for mapping them to Nodes
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod-ssd
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+  nodeSelector:
+    disk: local_ssd
+---
+#Pods with NodeSelector for mapping them to Nodes
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod-gpu
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+  nodeSelector:
+    hardware: local_gpu
+---
+#Normal Pods
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+
+---
+#Multi Container Pods with volumes exported and mounted (kind of sidecar/supporting containers)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multicontainer-pod
+spec:
+  containers:
+  - name: producer
+    image: ubuntu
+    command: ["/bin/bash"]
+    args: ["-c", "while true; do echo $(hostname) $(date) >> /var/log/index.html; sleep 10; done"]
+    volumeMounts:
+    - name: webcontent
+      mountPath: /var/log
+  - name: consumer
+    image: nginx
+    ports:
+      - containerPort: 80
+    volumeMounts:
+    - name: webcontent
+      mountPath: /usr/share/nginx/html
+  volumes:
+  - name: webcontent 
+    emptyDir: {}
+
+---
+
+#Pods with restartPolicy configured
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-world-onfailure-pod
+spec:
+  containers:
+  - name: hello-world
+    image: gcr.io/google-samples/hello-app:1.0
+  restartPolicy: OnFailure
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-world-never-pod
+spec:
+  containers:
+  - name: hello-world
+    image: gcr.io/google-samples/hello-app:1.0
+  restartPolicy: Never
+
+---
+#Mapping Pod to a Node without using Labels
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-world-pod
+spec:
+  nodeName: 'c1-node3'
+  containers:
+  - name: hello-world
+    image: gcr.io/google-samples/hello-app:1.0
+    ports:
+    - containerPort: 8080
